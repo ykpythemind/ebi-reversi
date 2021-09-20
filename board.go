@@ -5,6 +5,9 @@ import (
 	"errors"
 )
 
+var NeedPassError = errors.New("need pass")
+var GameEndError = errors.New("game finished")
+
 // Board is 8x8 reversi board
 type Board [8][8]*Square
 
@@ -33,6 +36,50 @@ func (b *Board) String() string {
 	return buf.String()
 }
 
+func (b *Board) fullCheck(nextPlayer Player) error {
+	found := false
+	for i := 0; i < 8; i++ {
+		for j := 0; j < 8; j++ {
+			// すべてのマスにチェックして、次置ける場所があるか確認
+			sq := &Square{pos: SquarePosition{X: i, Y: j}}
+			squares := b.Check(sq, nextPlayer)
+			if len(squares) > 0 {
+				found = true
+				break
+			}
+		}
+	}
+
+	if found {
+		return nil
+	}
+
+	gameEnd := false
+	nextnextPlayer := PlayerA
+	if nextPlayer == PlayerB {
+		nextnextPlayer = PlayerA
+	} else {
+		nextnextPlayer = PlayerB
+	}
+	for i := 0; i < 8; i++ {
+		for j := 0; j < 8; j++ {
+			// スキップされた結果、もう一度やることになるが置けるか。置けない場合はゲーム終了
+			sq := &Square{pos: SquarePosition{X: i, Y: j}}
+			squares := b.Check(sq, nextnextPlayer)
+			if len(squares) > 0 {
+				gameEnd = true
+				break
+			}
+		}
+	}
+
+	if gameEnd {
+		return GameEndError
+	} else {
+		return NeedPassError
+	}
+}
+
 // Place places square
 func (b *Board) Place(placeSquare *Square, player Player) error {
 	squares := b.Check(placeSquare, player)
@@ -45,18 +92,18 @@ func (b *Board) Place(placeSquare *Square, player Player) error {
 		return errors.New("already placed")
 	}
 
-	if player == PlayerA {
-		placeSquare.state = PlayerAFilled
-	} else { // B
-		placeSquare.state = PlayerBFilled
-	}
-
 	for _, sq := range squares {
 		if player == PlayerA {
 			sq.state = PlayerAFilled
 		} else { // B
 			sq.state = PlayerBFilled
 		}
+	}
+
+	if player == PlayerA {
+		placeSquare.state = PlayerAFilled
+	} else { // B
+		placeSquare.state = PlayerBFilled
 	}
 
 	return nil

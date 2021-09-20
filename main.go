@@ -77,10 +77,19 @@ func (g *Game) Update() error {
 				// clicked. update state
 				err := g.Board.Place(sq, g.Player)
 				if err != nil {
-					// TODO: エラー返るとき
 					// - skipが必要な場合
 					// - 試合が終わった場合
-					return err // todo ignore
+					if errors.Is(err, GameEndError) {
+						// todo result and reset
+						fmt.Printf("game end!\n")
+						return nil
+					}
+					if errors.Is(err, NeedPassError) {
+						fmt.Printf("player %s skipped!\n", g.Player)
+						return nil
+					}
+
+					return err
 				}
 				g.switchTurn()
 			}
@@ -149,6 +158,17 @@ type playerImage struct {
 type GameState int
 
 type Player int
+
+func (p Player) String() string {
+	switch p {
+	case PlayerA:
+		return "A"
+	case PlayerB:
+		return "B"
+	default:
+		return "unknown"
+	}
+}
 
 const (
 	PlayerA Player = iota
