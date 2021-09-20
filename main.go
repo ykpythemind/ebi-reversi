@@ -85,21 +85,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			}
 
 			sq := g.Board[i][j]
-			if sq.state != Blank {
-				geom := ebiten.GeoM{}
-				var player *playerImage
-				switch sq.state {
-				case PlayerAFilled:
-					player = &g.imgPlayerA
-				case PlayerBFilled:
-					player = &g.imgPlayerB
-				default:
-					panic("not reachable")
-				}
-				geom.Scale(player.scaleX, player.scaleY)
-				geom.Translate(float64(drawX), float64(drawY))
-				screen.DrawImage(player.image, &ebiten.DrawImageOptions{GeoM: geom})
-			}
+			sq.Draw(g, screen)
 		}
 	}
 
@@ -139,6 +125,28 @@ const (
 type Square struct {
 	pos   SquarePosition
 	state SquareState
+}
+
+func (s *Square) ScreenPos() (x, y float64) {
+	return float64(s.pos.X * SQUARE), float64(s.pos.Y * SQUARE)
+}
+
+func (s *Square) Draw(g *Game, image *ebiten.Image) {
+	if s.state != Blank {
+		geom := ebiten.GeoM{}
+		var player *playerImage
+		switch s.state {
+		case PlayerAFilled:
+			player = &g.imgPlayerA
+		case PlayerBFilled:
+			player = &g.imgPlayerB
+		default:
+			panic("not reachable")
+		}
+		geom.Scale(player.scaleX, player.scaleY)
+		geom.Translate(s.ScreenPos())
+		image.DrawImage(player.image, &ebiten.DrawImageOptions{GeoM: geom})
+	}
 }
 
 // Board is 8x8 reversi board

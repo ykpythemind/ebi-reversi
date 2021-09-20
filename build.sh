@@ -1,5 +1,5 @@
 #!/bin/sh
 
-set -eo
+set -eu
 
 go build -o ebi-reversi main.go && ./ebi-reversi
