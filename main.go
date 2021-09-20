@@ -152,10 +152,7 @@ func main() {
 }
 
 func getScaleToAdjustRect(rect *image.Rectangle, cx, cy float64) (sx, sy float64) {
-	x := float64(rect.Max.X - rect.Min.X)
-	y := float64(rect.Max.Y - rect.Min.Y)
-
-	return cx / x, cy / y
+	return cx / float64(rect.Dx()), cy / float64(rect.Dy())
 }
 
 func getCurrentSquare(curX, curY int) (err error, ix, iy int) {
