@@ -48,6 +48,8 @@ type Game struct {
 	imgPlayerB    playerImage
 	Board         *Board
 	CurrentSquare *Square // CurrentSquare is hovered square
+	GameState     GameState
+	canPlace      bool
 }
 
 func (g *Game) Update() error {
@@ -58,6 +60,19 @@ func (g *Game) Update() error {
 		g.CurrentSquare = g.Board[ix][iy]
 	} else {
 		g.CurrentSquare = nil
+	}
+
+	// check
+	if sq := g.CurrentSquare; sq != nil {
+		err := g.Board.Check(sq)
+		if err == nil {
+			// you can place
+			g.canPlace = true
+		} else {
+			// fmt.Println(err)
+			g.canPlace = false
+			// ignore
+		}
 	}
 
 	return nil
@@ -73,6 +88,17 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 	}
 
+	// draw prompt
+	var st string
+	if g.GameState == PlayerATurn {
+		st = "player A turn"
+	} else if g.GameState == PlayerBTurn {
+		st = "player B turn"
+	}
+	if st != "" {
+		text.Draw(screen, st, normalFont, BOARDX-100, BOARDY-10, color.Black)
+	}
+
 	// debug message
 	msg := fmt.Sprintf("TPS: %0.2f / FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS())
 	text.Draw(screen, msg, normalFont, 50, 50, color.Black)
@@ -80,6 +106,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		sq := g.CurrentSquare
 		sqMsg := fmt.Sprintf("square: (%d,%d)", sq.pos.X, sq.pos.Y)
 		text.Draw(screen, sqMsg, normalFont, 20, 20, color.Black)
+
+		if g.canPlace {
+			text.Draw(screen, "can place", normalFont, 20, 40, color.Black)
+		}
 	}
 }
 
@@ -92,6 +122,13 @@ type playerImage struct {
 	scaleX float64
 	scaleY float64
 }
+
+type GameState int
+
+const (
+	PlayerATurn = iota
+	PlayerBTurn
+)
 
 type SquarePosition struct {
 	X int
@@ -109,6 +146,10 @@ const (
 type Square struct {
 	pos   SquarePosition
 	state SquareState
+}
+
+func (s *Square) IsBlank() bool {
+	return s.state == Blank
 }
 
 func (s *Square) Eq(sq *Square) bool {
@@ -149,8 +190,25 @@ func (s *Square) Draw(g *Game, screen *ebiten.Image) {
 	}
 }
 
-// Board is 8x8 reversi board
-type Board [8][8]*Square
+// NewGame initialize game initial state
+func NewGame() *Game {
+	// init board
+	board := &Board{}
+	for i := 0; i < 8; i++ {
+		for j := 0; j < 8; j++ {
+			s := &Square{pos: SquarePosition{X: i, Y: j}}
+			board[i][j] = s
+		}
+	}
+
+	// game init
+	board[3][3].state = PlayerAFilled
+	board[3][4].state = PlayerBFilled
+	board[4][3].state = PlayerBFilled
+	board[4][4].state = PlayerAFilled
+
+	return &Game{Board: board}
+}
 
 func main() {
 	ebiten.SetWindowSize(640, 640)
@@ -172,18 +230,9 @@ func main() {
 	imgScaleX, imgScaleY = getScaleToAdjustRect(&b, SQUARE, SQUARE)
 	imgPlayerB := playerImage{image: timgB, scaleX: imgScaleX, scaleY: imgScaleY}
 
-	// init board
-	board := &Board{}
-	for i := 0; i < 8; i++ {
-		for j := 0; j < 8; j++ {
-			s := &Square{pos: SquarePosition{X: i, Y: j}}
-			board[i][j] = s
-		}
-	}
-
-	board[1][2].state = PlayerAFilled
-	board[6][7].state = PlayerBFilled
-	game := &Game{imgPlayerA: imgPlayerA, imgPlayerB: imgPlayerB, Board: board}
+	game := NewGame()
+	game.imgPlayerA = imgPlayerA
+	game.imgPlayerB = imgPlayerB
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
