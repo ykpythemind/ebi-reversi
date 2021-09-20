@@ -77,7 +77,16 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			ebitenutil.DrawRect(screen, float64(drawX), float64(drawY), float64(SQUARE), float64(SQUARE), color.Black)
 			ebitenutil.DrawRect(screen, float64(drawX+1), float64(drawY+1), float64(SQUARE-2), float64(SQUARE-2), color.White)
 
-			if g.Board[i][j].has {
+			if cr := g.CurrentSquare; cr != nil {
+				if cr.pos.X == i && cr.pos.Y == j {
+					// selected square
+					col := color.RGBA{85, 165, 34, 255}
+					ebitenutil.DrawRect(screen, float64(drawX+1), float64(drawY+1), float64(SQUARE-2), float64(SQUARE-2), col)
+				}
+			}
+
+			sq := g.Board[i][j]
+			if sq.has {
 				geom := ebiten.GeoM{}
 				geom.Scale(imgScaleX, imgScaleY)
 				geom.Translate(float64(drawX), float64(drawY))
