@@ -3,19 +3,23 @@ package main
 import (
 	"bytes"
 	"errors"
+	"sync"
 )
 
 var NeedPassError = errors.New("need pass")
 var GameEndError = errors.New("game finished")
 
 // Board is 8x8 reversi board
-type Board [8][8]*Square
+type Board struct {
+	Content [8][8]*Square
+	mutex   sync.Mutex
+}
 
 func (b *Board) String() string {
 	var buf bytes.Buffer
 	for i := 0; i < 8; i++ {
 		for j := 0; j < 8; j++ {
-			sq := b[i][j]
+			sq := b.Content[i][j]
 			switch sq.state {
 			case PlayerAFilled:
 				buf.Write([]byte("x"))
@@ -82,6 +86,9 @@ func (b *Board) fullCheck(nextPlayer Player) error {
 
 // Place places square
 func (b *Board) Place(placeSquare *Square, player Player) error {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
 	squares := b.Check(placeSquare, player)
 	if squares == nil || len(squares) == 0 {
 		// ignore
@@ -89,6 +96,9 @@ func (b *Board) Place(placeSquare *Square, player Player) error {
 	}
 
 	if placeSquare.state != Blank {
+		// fmt.Printf("already placed... to place (%d,%d)\n", placeSquare.pos.X, placeSquare.pos.Y)
+		// fmt.Printf("%+v\n", placeSquare)
+		// fmt.Println(b)
 		return errors.New("already placed")
 	}
 
@@ -111,6 +121,10 @@ func (b *Board) Place(placeSquare *Square, player Player) error {
 
 // Check checks whether player can place given square to the current board and return target squares to reverse.
 func (b *Board) Check(input *Square, player Player) []*Square {
+	if !input.IsBlank() {
+		return nil
+	}
+
 	allblank := true
 	aroundSquares := b.around(input)
 	for _, aroundSquare := range aroundSquares {
@@ -154,7 +168,7 @@ func (b *Board) findTargetWithDirection(input *Square, player Player, dx, dy int
 			return nil
 		}
 
-		sq := b[px][py]
+		sq := b.Content[px][py]
 		if player == PlayerA {
 			switch sq.state {
 			case PlayerAFilled:
@@ -211,7 +225,7 @@ func (b *Board) around(square *Square) []*Square {
 			if px < 0 || py < 0 || 7 < px || 7 < py {
 				continue
 			}
-			sq := b[px][py] // check target
+			sq := b.Content[px][py] // check target
 			sqs = append(sqs, sq)
 		}
 	}

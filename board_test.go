@@ -38,11 +38,11 @@ func parseBoard(str string) (*Board, error) {
 		for colindex, elm := range cols {
 			switch elm {
 			case "-", "!":
-				board[colindex][rowindex] = &Square{pos: SquarePosition{X: colindex, Y: rowindex}}
+				board.Content[colindex][rowindex] = &Square{pos: SquarePosition{X: colindex, Y: rowindex}}
 			case "a":
-				board[colindex][rowindex] = &Square{pos: SquarePosition{X: colindex, Y: rowindex}, state: PlayerAFilled}
+				board.Content[colindex][rowindex] = &Square{pos: SquarePosition{X: colindex, Y: rowindex}, state: PlayerAFilled}
 			case "b":
-				board[colindex][rowindex] = &Square{pos: SquarePosition{X: colindex, Y: rowindex}, state: PlayerBFilled}
+				board.Content[colindex][rowindex] = &Square{pos: SquarePosition{X: colindex, Y: rowindex}, state: PlayerBFilled}
 			default:
 				return nil, fmt.Errorf("invalid entity %s", elm)
 			}
@@ -86,10 +86,7 @@ func TestBoardCheck(t *testing.T) {
 		t.Fatal(err)
 	}
 	sq := &Square{pos: SquarePosition{X: 6, Y: 7}}
-	result, err := board.Check(sq, PlayerB)
-	if err != nil {
-		t.Fatal(err)
-	}
+	result := board.Check(sq, PlayerB)
 
 	if len(result) > 0 {
 		t.Fatalf("want: cannot reverse, got: %+v", result)
@@ -112,7 +109,7 @@ func TestBoardCheck2(t *testing.T) {
 		t.Fatal(err)
 	}
 	sq := &Square{pos: SquarePosition{X: 6, Y: 7}}
-	result, err := board.Check(sq, PlayerB)
+	result := board.Check(sq, PlayerB)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,21 +136,14 @@ func TestBoardCheck3(t *testing.T) {
 	}
 	sq := &Square{pos: SquarePosition{X: 5, Y: 2}}
 	{
-		result, err := board.Check(sq, PlayerA)
-		if err != nil {
-			t.Fatal(err)
-		}
+		result := board.Check(sq, PlayerA)
 		if len(result) > 0 {
 			t.Fatalf("want: playerA cant reverse. got: %v", result)
 		}
 	}
 
 	{
-		result, err := board.Check(sq, PlayerB)
-		if err != nil {
-			t.Fatal(err)
-		}
-
+		result := board.Check(sq, PlayerB)
 		expect := []struct {
 			x int
 			y int

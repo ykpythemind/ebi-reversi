@@ -58,7 +58,7 @@ func (g *Game) Update() error {
 
 	if err == nil {
 		// square detected
-		sq := g.Board[ix][iy]
+		sq := g.Board.Content[ix][iy]
 		g.CurrentSquare = sq
 	} else {
 		g.CurrentSquare = nil
@@ -70,7 +70,7 @@ func (g *Game) Update() error {
 	if sq := g.CurrentSquare; sq != nil {
 		squares := g.Board.Check(sq, g.Player)
 
-		if len(squares) > 0 {
+		if len(squares) > 0 && sq.IsBlank() {
 			// you can place
 			g.canPlace = true
 			if clicked {
@@ -115,7 +115,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	for i := 0; i < 8; i++ {
 		for j := 0; j < 8; j++ {
-			sq := g.Board[i][j]
+			sq := g.Board.Content[i][j]
 			sq.Draw(g, screen)
 		}
 	}
@@ -242,15 +242,15 @@ func NewGame() *Game {
 	for i := 0; i < 8; i++ {
 		for j := 0; j < 8; j++ {
 			s := &Square{pos: SquarePosition{X: i, Y: j}}
-			board[i][j] = s
+			board.Content[i][j] = s
 		}
 	}
 
 	// game init
-	board[3][3].state = PlayerAFilled
-	board[3][4].state = PlayerBFilled
-	board[4][3].state = PlayerBFilled
-	board[4][4].state = PlayerAFilled
+	board.Content[3][3].state = PlayerAFilled
+	board.Content[3][4].state = PlayerBFilled
+	board.Content[4][3].state = PlayerBFilled
+	board.Content[4][4].state = PlayerAFilled
 
 	return &Game{Board: board}
 }
