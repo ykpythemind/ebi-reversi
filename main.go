@@ -1,6 +1,7 @@
 package main
 
 import (
+	"image"
 	"image/color"
 	_ "image/png"
 	"log"
@@ -24,14 +25,20 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	drawX := 0
 	drawY := 0
 
+	b := g.img.Bounds()
+	imgScaleX, imgScaleY := getScaleToAdjustRect(&b, 40, 40)
+
 	for i := 0; i < 8; i++ {
 		drawX = i * 40
 		for j := 0; j < 8; j++ {
 			drawY = j * 40
+			ebitenutil.DrawRect(screen, float64(drawX), float64(drawY), float64(40), float64(40), color.Black)
+			ebitenutil.DrawRect(screen, float64(drawX+1), float64(drawY+1), float64(40-2), float64(40-2), color.White)
+
 			if g.Board[i][j].has {
 				geom := ebiten.GeoM{}
+				geom.Scale(imgScaleX, imgScaleY)
 				geom.Translate(float64(drawX), float64(drawY))
-				geom.Scale(0.3, 0.3)
 				screen.DrawImage(g.img, &ebiten.DrawImageOptions{GeoM: geom})
 			}
 		}
@@ -40,7 +47,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return 320, 240
+	return 320, 320
 }
 
 type Square struct {
@@ -51,13 +58,15 @@ type Square struct {
 type Board [8][8]Square
 
 func main() {
-	ebiten.SetWindowSize(640, 480)
+	ebiten.SetWindowSize(640, 640)
 	ebiten.SetWindowTitle("Fill")
 
 	img, _, err := ebitenutil.NewImageFromFile("images/gopher.png")
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	img.Bounds()
 
 	board := &Board{}
 	board[1][2].has = true
@@ -67,4 +76,11 @@ func main() {
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func getScaleToAdjustRect(rect *image.Rectangle, cx, cy float64) (sx, sy float64) {
+	x := float64(rect.Max.X - rect.Min.X)
+	y := float64(rect.Max.Y - rect.Min.Y)
+
+	return cx / x, cy / y
 }
