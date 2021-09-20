@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	_ "image/png"
@@ -8,7 +9,32 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/hajimehoshi/ebiten/v2/text"
+	"golang.org/x/image/font/gofont/goitalic"
+
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
 )
+
+var normalFont font.Face
+
+func init() {
+
+	tt, err := opentype.Parse(goitalic.TTF)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	const dpi = 72
+	normalFont, err = opentype.NewFace(tt, &opentype.FaceOptions{
+		Size:    16,
+		DPI:     dpi,
+		Hinting: font.HintingFull,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+}
 
 type Game struct {
 	img   *ebiten.Image
@@ -44,6 +70,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 	}
 
+	// debug message
+	msg := fmt.Sprintf("TPS: %0.2f / FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS())
+	text.Draw(screen, msg, normalFont, 50, 50, color.Black)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
