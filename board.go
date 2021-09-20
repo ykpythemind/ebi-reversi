@@ -80,7 +80,8 @@ func (b *Board) Check(input *Square, player Player) ([]*Square, error) {
 		}
 	}
 	if allblank {
-		return nil, errors.New("around is all blank")
+		// around is all blank. so early break
+		return nil, nil
 	}
 
 	var result []*Square
@@ -110,9 +111,9 @@ func (b *Board) findTargetWithDirection(input *Square, player Player, dx, dy int
 	for {
 		px += dx
 		py += dy
-		// out of range, so break the loop
+		// out of range, so finish
 		if px < 0 || py < 0 || 7 < px || 7 < py {
-			break
+			return nil
 		}
 
 		sq := b[px][py]
@@ -155,6 +156,7 @@ func (b *Board) findTargetWithDirection(input *Square, player Player, dx, dy int
 		}
 	}
 
+	//FIXME: unreachable code
 	return result
 }
 
