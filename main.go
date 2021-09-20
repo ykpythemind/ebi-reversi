@@ -66,33 +66,39 @@ func (g *Game) Update() error {
 
 	clicked := ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft)
 
-	// check
+	// フォーカス中マスのチェック
 	if sq := g.CurrentSquare; sq != nil {
-		squares, err := g.Board.Check(sq, g.Player)
-		if err == nil && len(squares) > 0 {
+		squares := g.Board.Check(sq, g.Player)
+
+		if len(squares) > 0 {
 			// you can place
 			g.canPlace = true
 			if clicked {
 				// clicked. update state
 				err := g.Board.Place(sq, g.Player)
 				if err != nil {
-					return err
+					// TODO: エラー返るとき
+					// - skipが必要な場合
+					// - 試合が終わった場合
+					return err // todo ignore
 				}
-				// next turn
-				if g.Player == PlayerA {
-					g.Player = PlayerB
-				} else {
-					g.Player = PlayerA
-				}
+				g.switchTurn()
 			}
 		} else {
-			// fmt.Println("check err", err)
 			g.canPlace = false
 			// ignore
 		}
 	}
 
 	return nil
+}
+
+func (g *Game) switchTurn() {
+	if g.Player == PlayerA {
+		g.Player = PlayerB
+	} else {
+		g.Player = PlayerA
+	}
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {

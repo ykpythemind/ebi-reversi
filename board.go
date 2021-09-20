@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"errors"
-	"fmt"
 )
 
 // Board is 8x8 reversi board
@@ -36,11 +35,8 @@ func (b *Board) String() string {
 
 // Place places square
 func (b *Board) Place(placeSquare *Square, player Player) error {
-	squares, err := b.Check(placeSquare, player)
-	if err != nil {
-		return err
-	}
-	if len(squares) == 0 {
+	squares := b.Check(placeSquare, player)
+	if squares == nil || len(squares) == 0 {
 		// ignore
 		return nil
 	}
@@ -67,11 +63,7 @@ func (b *Board) Place(placeSquare *Square, player Player) error {
 }
 
 // Check checks whether player can place given square to the current board and return target squares to reverse.
-func (b *Board) Check(input *Square, player Player) ([]*Square, error) {
-	if !input.IsBlank() {
-		return nil, errors.New("already exists")
-	}
-
+func (b *Board) Check(input *Square, player Player) []*Square {
 	allblank := true
 	aroundSquares := b.around(input)
 	for _, aroundSquare := range aroundSquares {
@@ -81,7 +73,7 @@ func (b *Board) Check(input *Square, player Player) ([]*Square, error) {
 	}
 	if allblank {
 		// around is all blank. so early break
-		return nil, nil
+		return nil
 	}
 
 	var result []*Square
@@ -99,8 +91,7 @@ func (b *Board) Check(input *Square, player Player) ([]*Square, error) {
 		}
 	}
 
-	fmt.Println("targets:", result)
-	return result, nil
+	return result
 }
 
 func (b *Board) findTargetWithDirection(input *Square, player Player, dx, dy int) []*Square {
