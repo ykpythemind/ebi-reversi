@@ -66,24 +66,8 @@ func (g *Game) Update() error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{0xff, 0xff, 0xff, 0xff})
 
-	drawX := 0
-	drawY := 0
-
 	for i := 0; i < 8; i++ {
-		drawX = i * SQUARE
 		for j := 0; j < 8; j++ {
-			drawY = j * SQUARE
-			ebitenutil.DrawRect(screen, float64(drawX), float64(drawY), float64(SQUARE), float64(SQUARE), color.Black)
-			ebitenutil.DrawRect(screen, float64(drawX+1), float64(drawY+1), float64(SQUARE-2), float64(SQUARE-2), color.White)
-
-			if cr := g.CurrentSquare; cr != nil {
-				if cr.pos.X == i && cr.pos.Y == j {
-					// selected square
-					col := color.RGBA{85, 165, 34, 255}
-					ebitenutil.DrawRect(screen, float64(drawX+1), float64(drawY+1), float64(SQUARE-2), float64(SQUARE-2), col)
-				}
-			}
-
 			sq := g.Board[i][j]
 			sq.Draw(g, screen)
 		}
@@ -127,11 +111,27 @@ type Square struct {
 	state SquareState
 }
 
+func (s *Square) Eq(sq *Square) bool {
+	return s.pos.X == sq.pos.X && s.pos.Y == sq.pos.Y
+}
+
 func (s *Square) ScreenPos() (x, y float64) {
 	return float64(s.pos.X * SQUARE), float64(s.pos.Y * SQUARE)
 }
 
-func (s *Square) Draw(g *Game, image *ebiten.Image) {
+func (s *Square) Draw(g *Game, screen *ebiten.Image) {
+	drawX, drawY := s.ScreenPos()
+	ebitenutil.DrawRect(screen, float64(drawX), float64(drawY), float64(SQUARE), float64(SQUARE), color.Black)
+	ebitenutil.DrawRect(screen, float64(drawX+1), float64(drawY+1), float64(SQUARE-2), float64(SQUARE-2), color.White)
+
+	if cr := g.CurrentSquare; cr != nil {
+		if s.Eq(cr) {
+			// selected square
+			col := color.RGBA{85, 165, 34, 255}
+			ebitenutil.DrawRect(screen, float64(drawX+1), float64(drawY+1), float64(SQUARE-2), float64(SQUARE-2), col)
+		}
+	}
+
 	if s.state != Blank {
 		geom := ebiten.GeoM{}
 		var player *playerImage
@@ -145,7 +145,7 @@ func (s *Square) Draw(g *Game, image *ebiten.Image) {
 		}
 		geom.Scale(player.scaleX, player.scaleY)
 		geom.Translate(s.ScreenPos())
-		image.DrawImage(player.image, &ebiten.DrawImageOptions{GeoM: geom})
+		screen.DrawImage(player.image, &ebiten.DrawImageOptions{GeoM: geom})
 	}
 }
 
