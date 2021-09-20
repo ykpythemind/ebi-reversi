@@ -48,28 +48,30 @@ type Game struct {
 	imgPlayerB    playerImage
 	Board         *Board
 	CurrentSquare *Square // CurrentSquare is hovered square
-	GameState     GameState
+	Player        Player
 	canPlace      bool
 }
 
 func (g *Game) Update() error {
 	// fmt.Println(ebiten.CursorPosition())
 	err, ix, iy := getCurrentSquare(ebiten.CursorPosition())
+
 	if err == nil {
 		// square detected
-		g.CurrentSquare = g.Board[ix][iy]
+		sq := g.Board[ix][iy]
+		g.CurrentSquare = sq
 	} else {
 		g.CurrentSquare = nil
 	}
 
 	// check
 	if sq := g.CurrentSquare; sq != nil {
-		err := g.Board.Check(sq)
+		err := g.Board.Check(sq, g.Player)
 		if err == nil {
 			// you can place
 			g.canPlace = true
 		} else {
-			// fmt.Println(err)
+			// fmt.Println("check err", err)
 			g.canPlace = false
 			// ignore
 		}
@@ -90,9 +92,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	// draw prompt
 	var st string
-	if g.GameState == PlayerATurn {
+	if g.Player == PlayerA {
 		st = "player A turn"
-	} else if g.GameState == PlayerBTurn {
+	} else if g.Player == PlayerB {
 		st = "player B turn"
 	}
 	if st != "" {
@@ -125,9 +127,11 @@ type playerImage struct {
 
 type GameState int
 
+type Player int
+
 const (
-	PlayerATurn = iota
-	PlayerBTurn
+	PlayerA Player = iota
+	PlayerB
 )
 
 type SquarePosition struct {

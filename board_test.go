@@ -63,3 +63,6 @@ func TestBoardParse(t *testing.T) {
 
 	fmt.Println(board)
 }
+
+func TestReversiTarget(t *testing.T) {
+}

@@ -35,27 +35,113 @@ func (b *Board) String() string {
 }
 
 // Check checks whether player can place given square to the current board
-func (b *Board) Check(checkTarget *Square) error {
-	if !checkTarget.IsBlank() {
-		return errors.New("already exists")
+func (b *Board) Check(checkTarget *Square, player Player) error {
+	sqs, err := b.ReverseTarget(checkTarget, player)
+	if err != nil {
+		return err
+	}
+
+	if len(sqs) == 0 {
+		return errors.New("not found")
+	} else {
+		fmt.Println(sqs)
+	}
+
+	return nil
+}
+
+// get all reverse target
+func (b *Board) ReverseTarget(input *Square, player Player) ([]*Square, error) {
+	if !input.IsBlank() {
+		return nil, errors.New("already exists")
 	}
 
 	allblank := true
-	aroundSquares := b.Around(checkTarget)
-	fmt.Println(aroundSquares)
+	aroundSquares := b.around(input)
 	for _, aroundSquare := range aroundSquares {
 		if !aroundSquare.IsBlank() {
 			allblank = false
 		}
 	}
 	if allblank {
-		return errors.New("around is all blank")
+		return nil, errors.New("around is all blank")
 	}
 
-	return nil
+	var result []*Square
+
+	// check
+	for i := -1; i < 2; i++ {
+		for j := -1; j < 2; j++ {
+			if i == 0 && j == 0 {
+				continue // self
+			}
+			r := b.findTargetWithDirection(input, player, i, j)
+			if r != nil && len(r) > 0 {
+				result = append(result, r...)
+			}
+		}
+	}
+
+	return result, nil
 }
 
-func (b *Board) Around(square *Square) []*Square {
+func (b *Board) findTargetWithDirection(input *Square, player Player, dx, dy int) []*Square {
+	// dx,dyを探索方向としてリバースできるマスを集めてくる
+	var result []*Square
+	px, py := input.pos.X, input.pos.Y
+
+	for {
+		px += dx
+		py += dy
+		// out of range, so break the loop
+		if px < 0 || py < 0 || 7 < px || 7 < py {
+			break
+		}
+
+		sq := b[px][py]
+		if player == PlayerA {
+			switch sq.state {
+			case PlayerAFilled:
+				if len(result) == 0 {
+					return nil
+				} else {
+					// 挟んだ
+					return result
+				}
+			case PlayerBFilled:
+				result = append(result, sq)
+			case Blank:
+				return nil
+			default:
+				panic("unreachable")
+			}
+		} else if player == PlayerB {
+			switch sq.state {
+			case PlayerAFilled:
+				result = append(result, sq)
+			case PlayerBFilled:
+				if len(result) == 0 {
+					return nil
+				} else {
+					// 挟んだ
+					return result
+				}
+			case Blank:
+				return nil
+			default:
+				panic("unreachable")
+			}
+		} else if input.state == Blank {
+			continue
+		} else {
+			panic("unreachable")
+		}
+	}
+
+	return result
+}
+
+func (b *Board) around(square *Square) []*Square {
 	type pos struct {
 		x int
 		y int

@@ -2,4 +2,4 @@
 
 set -eu
 
-go build -o ebi-reversi main.go && ./ebi-reversi
+go build -o ebi-reversi && ./ebi-reversi
