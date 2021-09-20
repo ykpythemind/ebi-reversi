@@ -149,8 +149,6 @@ func (b *Board) findTargetWithDirection(input *Square, player Player, dx, dy int
 			default:
 				panic("unreachable")
 			}
-		} else if input.state == Blank {
-			continue
 		} else {
 			panic("unreachable")
 		}
