@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	_ "image/jpeg"
 	_ "image/png"
 	"log"
 
@@ -43,7 +44,8 @@ func init() {
 }
 
 type Game struct {
-	img           *ebiten.Image
+	imgPlayerA    playerImage
+	imgPlayerB    playerImage
 	Board         *Board
 	CurrentSquare *Square // CurrentSquare is hovered square
 }
@@ -67,9 +69,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	drawX := 0
 	drawY := 0
 
-	b := g.img.Bounds()
-	imgScaleX, imgScaleY := getScaleToAdjustRect(&b, SQUARE, SQUARE)
-
 	for i := 0; i < 8; i++ {
 		drawX = i * SQUARE
 		for j := 0; j < 8; j++ {
@@ -86,11 +85,20 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			}
 
 			sq := g.Board[i][j]
-			if sq.has {
+			if sq.state != Blank {
 				geom := ebiten.GeoM{}
-				geom.Scale(imgScaleX, imgScaleY)
+				var player *playerImage
+				switch sq.state {
+				case PlayerAFilled:
+					player = &g.imgPlayerA
+				case PlayerBFilled:
+					player = &g.imgPlayerB
+				default:
+					panic("not reachable")
+				}
+				geom.Scale(player.scaleX, player.scaleY)
 				geom.Translate(float64(drawX), float64(drawY))
-				screen.DrawImage(g.img, &ebiten.DrawImageOptions{GeoM: geom})
+				screen.DrawImage(player.image, &ebiten.DrawImageOptions{GeoM: geom})
 			}
 		}
 	}
@@ -109,14 +117,28 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 	return 320, 320
 }
 
+type playerImage struct {
+	image  *ebiten.Image
+	scaleX float64
+	scaleY float64
+}
+
 type SquarePosition struct {
 	X int
 	Y int
 }
 
+type SquareState int
+
+const (
+	Blank SquareState = iota
+	PlayerAFilled
+	PlayerBFilled
+)
+
 type Square struct {
-	has bool // tmp
-	pos SquarePosition
+	pos   SquarePosition
+	state SquareState
 }
 
 // Board is 8x8 reversi board
@@ -126,12 +148,21 @@ func main() {
 	ebiten.SetWindowSize(640, 640)
 	ebiten.SetWindowTitle("Fill")
 
-	img, _, err := ebitenutil.NewImageFromFile("images/gopher.png")
+	timgA, _, err := ebitenutil.NewImageFromFile("images/gopher.png")
 	if err != nil {
 		log.Fatal(err)
 	}
+	a := timgA.Bounds()
+	imgScaleX, imgScaleY := getScaleToAdjustRect(&a, SQUARE, SQUARE)
+	imgPlayerA := playerImage{image: timgA, scaleX: imgScaleX, scaleY: imgScaleY}
 
-	img.Bounds()
+	timgB, _, err := ebitenutil.NewImageFromFile("images/ykpythemind.jpg")
+	if err != nil {
+		log.Fatal(err)
+	}
+	b := timgB.Bounds()
+	imgScaleX, imgScaleY = getScaleToAdjustRect(&b, SQUARE, SQUARE)
+	imgPlayerB := playerImage{image: timgB, scaleX: imgScaleX, scaleY: imgScaleY}
 
 	// init board
 	board := &Board{}
@@ -142,9 +173,9 @@ func main() {
 		}
 	}
 
-	board[1][2].has = true
-	board[6][7].has = true
-	game := &Game{img: img, Board: board}
+	board[1][2].state = PlayerAFilled
+	board[6][7].state = PlayerBFilled
+	game := &Game{imgPlayerA: imgPlayerA, imgPlayerB: imgPlayerB, Board: board}
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
