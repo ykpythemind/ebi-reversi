@@ -64,12 +64,27 @@ func (g *Game) Update() error {
 		g.CurrentSquare = nil
 	}
 
+	clicked := ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft)
+
 	// check
 	if sq := g.CurrentSquare; sq != nil {
-		err := g.Board.Check(sq, g.Player)
-		if err == nil {
+		squares, err := g.Board.Check(sq, g.Player)
+		if err == nil && len(squares) > 0 {
 			// you can place
 			g.canPlace = true
+			if clicked {
+				// clicked. update state
+				err := g.Board.Place(sq, g.Player)
+				if err != nil {
+					return err
+				}
+				// next turn
+				if g.Player == PlayerA {
+					g.Player = PlayerB
+				} else {
+					g.Player = PlayerA
+				}
+			}
 		} else {
 			// fmt.Println("check err", err)
 			g.canPlace = false

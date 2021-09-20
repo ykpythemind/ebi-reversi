@@ -34,24 +34,40 @@ func (b *Board) String() string {
 	return buf.String()
 }
 
-// Check checks whether player can place given square to the current board
-func (b *Board) Check(checkTarget *Square, player Player) error {
-	sqs, err := b.ReverseTarget(checkTarget, player)
+// Place places square
+func (b *Board) Place(placeSquare *Square, player Player) error {
+	squares, err := b.Check(placeSquare, player)
 	if err != nil {
 		return err
 	}
+	if len(squares) == 0 {
+		// ignore
+		return nil
+	}
 
-	if len(sqs) == 0 {
-		return errors.New("not found")
-	} else {
-		fmt.Println(sqs)
+	if placeSquare.state != Blank {
+		return errors.New("already placed")
+	}
+
+	if player == PlayerA {
+		placeSquare.state = PlayerAFilled
+	} else { // B
+		placeSquare.state = PlayerBFilled
+	}
+
+	for _, sq := range squares {
+		if player == PlayerA {
+			sq.state = PlayerAFilled
+		} else { // B
+			sq.state = PlayerBFilled
+		}
 	}
 
 	return nil
 }
 
-// get all reverse target
-func (b *Board) ReverseTarget(input *Square, player Player) ([]*Square, error) {
+// Check checks whether player can place given square to the current board and return target squares to reverse.
+func (b *Board) Check(input *Square, player Player) ([]*Square, error) {
 	if !input.IsBlank() {
 		return nil, errors.New("already exists")
 	}
@@ -82,6 +98,7 @@ func (b *Board) ReverseTarget(input *Square, player Player) ([]*Square, error) {
 		}
 	}
 
+	fmt.Println("targets:", result)
 	return result, nil
 }
 
