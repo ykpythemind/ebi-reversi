@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"image"
 	"image/color"
@@ -17,6 +18,11 @@ import (
 )
 
 var normalFont font.Face
+
+const (
+	BOARDX, BOARDY = 320, 320
+	SQUARE         = BOARDX / 8
+)
 
 func init() {
 
@@ -37,11 +43,21 @@ func init() {
 }
 
 type Game struct {
-	img   *ebiten.Image
-	Board *Board
+	img           *ebiten.Image
+	Board         *Board
+	CurrentSquare *Square // CurrentSquare is hovered square
 }
 
 func (g *Game) Update() error {
+	// fmt.Println(ebiten.CursorPosition())
+	err, ix, iy := getCurrentSquare(ebiten.CursorPosition())
+	if err == nil {
+		// square detected
+		g.CurrentSquare = g.Board[ix][iy]
+	} else {
+		g.CurrentSquare = nil
+	}
+
 	return nil
 }
 
@@ -52,14 +68,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	drawY := 0
 
 	b := g.img.Bounds()
-	imgScaleX, imgScaleY := getScaleToAdjustRect(&b, 40, 40)
+	imgScaleX, imgScaleY := getScaleToAdjustRect(&b, SQUARE, SQUARE)
 
 	for i := 0; i < 8; i++ {
-		drawX = i * 40
+		drawX = i * SQUARE
 		for j := 0; j < 8; j++ {
-			drawY = j * 40
-			ebitenutil.DrawRect(screen, float64(drawX), float64(drawY), float64(40), float64(40), color.Black)
-			ebitenutil.DrawRect(screen, float64(drawX+1), float64(drawY+1), float64(40-2), float64(40-2), color.White)
+			drawY = j * SQUARE
+			ebitenutil.DrawRect(screen, float64(drawX), float64(drawY), float64(SQUARE), float64(SQUARE), color.Black)
+			ebitenutil.DrawRect(screen, float64(drawX+1), float64(drawY+1), float64(SQUARE-2), float64(SQUARE-2), color.White)
 
 			if g.Board[i][j].has {
 				geom := ebiten.GeoM{}
@@ -73,18 +89,29 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	// debug message
 	msg := fmt.Sprintf("TPS: %0.2f / FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS())
 	text.Draw(screen, msg, normalFont, 50, 50, color.Black)
+	if g.CurrentSquare != nil {
+		sq := g.CurrentSquare
+		sqMsg := fmt.Sprintf("square: (%d,%d)", sq.pos.X, sq.pos.Y)
+		text.Draw(screen, sqMsg, normalFont, 20, 20, color.Black)
+	}
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	return 320, 320
 }
 
+type SquarePosition struct {
+	X int
+	Y int
+}
+
 type Square struct {
 	has bool // tmp
+	pos SquarePosition
 }
 
 // Board is 8x8 reversi board
-type Board [8][8]Square
+type Board [8][8]*Square
 
 func main() {
 	ebiten.SetWindowSize(640, 640)
@@ -97,7 +124,15 @@ func main() {
 
 	img.Bounds()
 
+	// init board
 	board := &Board{}
+	for i := 0; i < 8; i++ {
+		for j := 0; j < 8; j++ {
+			s := &Square{pos: SquarePosition{X: i, Y: j}}
+			board[i][j] = s
+		}
+	}
+
 	board[1][2].has = true
 	board[6][7].has = true
 	game := &Game{img: img, Board: board}
@@ -112,4 +147,25 @@ func getScaleToAdjustRect(rect *image.Rectangle, cx, cy float64) (sx, sy float64
 	y := float64(rect.Max.Y - rect.Min.Y)
 
 	return cx / x, cy / y
+}
+
+func getCurrentSquare(curX, curY int) (err error, ix, iy int) {
+	if curX < 0 || BOARDY < curY {
+		return errors.New("out of board"), 0, 0
+	}
+
+	point := image.Point{curX, curY}
+
+	for i := 0; i < 8; i++ {
+		for j := 0; j < 8; j++ {
+			min := image.Point{i * SQUARE, j * SQUARE}
+			max := image.Point{i*SQUARE + SQUARE - 1, j*SQUARE + SQUARE - 1}
+			rect := image.Rectangle{Min: min, Max: max}
+			if point.In(rect) {
+				return nil, i, j
+			}
+		}
+	}
+
+	return errors.New("not found"), 0, 0
 }
