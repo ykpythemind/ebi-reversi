@@ -214,11 +214,6 @@ exit:
 }
 
 func (b *Board) around(square *Square) []*Square {
-	type pos struct {
-		x int
-		y int
-	}
-
 	sqs := []*Square{}
 
 	for i := -1; i < 2; i++ {
