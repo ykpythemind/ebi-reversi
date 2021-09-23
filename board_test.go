@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -166,5 +167,30 @@ func TestBoardCheck3(t *testing.T) {
 				t.Errorf("want (%d,%d), but not in results", e.x, e.y)
 			}
 		}
+	}
+}
+
+func TestGameCheckPlayerACantPlaceButBCan(t *testing.T) {
+	temp := `
+a,a,a,a,a,a,a,a
+a,a,a,a,a,a,a,a
+a,a,a,a,a,a,a,-
+-,a,a,a,a,a,a,a
+a,a,a,b,b,a,b,b
+a,a,a,a,a,a,b,b
+a,a,a,a,a,b,b,b
+a,a,a,a,a,b,b,b`
+
+	board, err := parseBoard(temp)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := board.gameCheck(PlayerA); !errors.Is(err, NeedPassError) {
+		t.Errorf("expected NeedPassError, but %s", err)
+	}
+
+	if err := board.gameCheck(PlayerB); err != nil {
+		t.Errorf("expected no error, but got %s", err)
 	}
 }

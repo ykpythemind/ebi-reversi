@@ -40,16 +40,18 @@ func (b *Board) String() string {
 	return buf.String()
 }
 
-func (b *Board) fullCheck(nextPlayer Player) error {
+func (b *Board) gameCheck(nextPlayer Player) error {
 	found := false
+
+loop:
 	for i := 0; i < 8; i++ {
 		for j := 0; j < 8; j++ {
 			// すべてのマスにチェックして、次置ける場所があるか確認
-			sq := &Square{pos: SquarePosition{X: i, Y: j}}
+			sq := b.Content[i][j]
 			squares := b.Check(sq, nextPlayer)
 			if len(squares) > 0 {
 				found = true
-				break
+				break loop
 			}
 		}
 	}
@@ -58,21 +60,23 @@ func (b *Board) fullCheck(nextPlayer Player) error {
 		return nil
 	}
 
-	gameEnd := false
-	nextnextPlayer := PlayerA
+	gameEnd := true
+	var nextnextPlayer Player
 	if nextPlayer == PlayerB {
 		nextnextPlayer = PlayerA
 	} else {
 		nextnextPlayer = PlayerB
 	}
+
+loop2:
 	for i := 0; i < 8; i++ {
 		for j := 0; j < 8; j++ {
 			// スキップされた結果、もう一度やることになるが置けるか。置けない場合はゲーム終了
-			sq := &Square{pos: SquarePosition{X: i, Y: j}}
+			sq := b.Content[i][j]
 			squares := b.Check(sq, nextnextPlayer)
 			if len(squares) > 0 {
-				gameEnd = true
-				break
+				gameEnd = false
+				break loop2
 			}
 		}
 	}
@@ -165,7 +169,7 @@ func (b *Board) findTargetWithDirection(input *Square, player Player, dx, dy int
 		py += dy
 		// out of range, so finish
 		if px < 0 || py < 0 || 7 < px || 7 < py {
-			return nil
+			goto exit
 		}
 
 		sq := b.Content[px][py]
@@ -173,7 +177,7 @@ func (b *Board) findTargetWithDirection(input *Square, player Player, dx, dy int
 			switch sq.state {
 			case PlayerAFilled:
 				if len(result) == 0 {
-					return nil
+					goto exit
 				} else {
 					// 挟んだ
 					return result
@@ -181,7 +185,7 @@ func (b *Board) findTargetWithDirection(input *Square, player Player, dx, dy int
 			case PlayerBFilled:
 				result = append(result, sq)
 			case Blank:
-				return nil
+				goto exit
 			default:
 				panic("unreachable")
 			}
@@ -191,7 +195,7 @@ func (b *Board) findTargetWithDirection(input *Square, player Player, dx, dy int
 				result = append(result, sq)
 			case PlayerBFilled:
 				if len(result) == 0 {
-					return nil
+					goto exit
 				} else {
 					// 挟んだ
 					return result
@@ -201,13 +205,11 @@ func (b *Board) findTargetWithDirection(input *Square, player Player, dx, dy int
 			default:
 				panic("unreachable")
 			}
-		} else {
-			panic("unreachable")
 		}
 	}
 
-	//FIXME: unreachable code
-	return result
+exit:
+	return nil
 }
 
 func (b *Board) around(square *Square) []*Square {
