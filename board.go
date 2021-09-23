@@ -90,6 +90,7 @@ loop2:
 
 // Place places square
 func (b *Board) Place(placeSquare *Square, player Player) error {
+	// 要らなそう
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 

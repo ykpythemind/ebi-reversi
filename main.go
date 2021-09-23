@@ -77,6 +77,12 @@ func (g *Game) Update() error {
 				// clicked. update state
 				err := g.Board.Place(sq, g.Player)
 				if err != nil {
+					return err
+				}
+				g.switchTurn()
+
+				err = g.Board.gameCheck(g.Player)
+				if err != nil {
 					// - skipが必要な場合
 					// - 試合が終わった場合
 					if errors.Is(err, GameEndError) {
@@ -86,12 +92,15 @@ func (g *Game) Update() error {
 					}
 					if errors.Is(err, NeedPassError) {
 						fmt.Printf("player %s skipped!\n", g.Player)
+						g.switchTurn()
 						return nil
 					}
 
+					// unexpected error
 					return err
 				}
-				g.switchTurn()
+
+				fmt.Printf("now is player %s turn\n", g.Player)
 			}
 		} else {
 			g.canPlace = false
@@ -132,8 +141,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	// debug message
-	msg := fmt.Sprintf("TPS: %0.2f / FPS: %0.2f", ebiten.CurrentTPS(), ebiten.CurrentFPS())
-	text.Draw(screen, msg, normalFont, 50, 50, color.Black)
 	if g.CurrentSquare != nil {
 		sq := g.CurrentSquare
 		sqMsg := fmt.Sprintf("square: (%d,%d)", sq.pos.X, sq.pos.Y)
