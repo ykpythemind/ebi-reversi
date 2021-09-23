@@ -170,6 +170,31 @@ func TestBoardCheck3(t *testing.T) {
 	}
 }
 
+func TestGameCheckOk(t *testing.T) {
+	temp := `
+-,-,-,-,-,-,-,-
+-,-,-,-,-,-,-,-
+-,-,-,-,-,!,-,-
+-,-,-,a,a,a,-,-
+-,-,-,b,b,a,-,-
+-,-,-,-,-,a,-,-
+-,-,-,-,-,b,-,-
+-,-,-,-,-,b,-,-`
+
+	board, err := parseBoard(temp)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := board.gameCheck(PlayerA); err != nil {
+		t.Errorf("expected no error, but got %s", err)
+	}
+
+	if err := board.gameCheck(PlayerB); err != nil {
+		t.Errorf("expected no error, but got %s", err)
+	}
+}
+
 func TestGameCheckPlayerACantPlaceButBCan(t *testing.T) {
 	temp := `
 a,a,a,a,a,a,a,a
